@@ -2,6 +2,7 @@ import os
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 from dotenv import load_dotenv
+from ytmusicapi import YTMusic, OAuthCredentials
 
 load_dotenv()
 # Authenticate
@@ -27,7 +28,7 @@ else:
     print(f"Playlist '{os.getenv("DESIRED_PLAYLIST")}' not found.")
     playlist = None
 
-
+songs = []
 
 if playlist:
     results = sp.playlist_tracks(playlist['id'])
@@ -41,3 +42,13 @@ if playlist:
     for i, item in enumerate(tracks):
         track = item['track']
         print(f"Track {i+1}: {track['name']} by {', '.join(artist['name'] for artist in track['artists'])}")
+        songs.append(f"{track['name']} {', '.join(artist['name'] for artist in track['artists'])}")
+
+# Initialize YTMusic with OAuth credentials
+ytmusic = YTMusic('oauth.json', oauth_credentials=OAuthCredentials(client_id=os.getenv("YT_CLIENT_ID"), client_secret=os.getenv("YT_CLIENT_SECRET")))
+playlistId = ytmusic.create_playlist(os.getenv("DESIRED_PLAYLIST"))
+
+for song in songs:
+    search_results = ytmusic.search(song, filter='songs')
+    if search_results:
+        ytmusic.add_playlist_items(playlistId, [search_results[0]['videoId']])
